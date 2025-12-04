@@ -1,27 +1,26 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Goal, Post, Achievement } from '../types';
+import { encryptKey, decryptKey } from '../utils/crypto';
 
 interface AppContextType {
   user: User | null;
   goals: Goal[];
   posts: Post[];
   isLoading: boolean;
+  apiKey: string | null;
+  setApiKey: (key: string) => void;
   login: (name: string) => void;
   logout: () => void;
   addGoal: (goal: Goal) => void;
   updateGoalProgress: (id: string, value: number) => void;
   addPost: (content: string) => void;
   toggleLike: (postId: string) => void;
-  xpGained: number | null; // For animation popups
+  xpGained: number | null;
   clearXpPopup: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const INITIAL_ACHIEVEMENTS: Achievement[] = [
-  { id: '1', title: '첫 걸음', description: '첫 목표를 달성하세요', icon: '🌱', unlocked: false },
-  { id: '2', title: '소통왕', description: '커뮤니티에 글을 남기세요', icon: '💬', unlocked: false },
-];
 
 const SAMPLE_POSTS: Post[] = [
   {
@@ -54,11 +53,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [posts, setPosts] = useState<Post[]>(SAMPLE_POSTS);
   const [isLoading, setIsLoading] = useState(true);
   const [xpGained, setXpGained] = useState<number | null>(null);
+  const [apiKey, setApiKeyState] = useState<string | null>(null);
 
-  // Simulate loading user from local storage
+  // Initialize Data
   useEffect(() => {
     const storedUser = localStorage.getItem('neon_user');
     const storedGoals = localStorage.getItem('neon_goals');
+    const storedKey = localStorage.getItem('neon_api_key_enc');
     
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -66,14 +67,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (storedGoals) {
       setGoals(JSON.parse(storedGoals));
     }
+    if (storedKey) {
+      const decrypted = decryptKey(storedKey);
+      if (decrypted) setApiKeyState(decrypted);
+    }
     setIsLoading(false);
   }, []);
 
-  // Persist updates
+  // Persist Data
   useEffect(() => {
     if (user) localStorage.setItem('neon_user', JSON.stringify(user));
     if (goals) localStorage.setItem('neon_goals', JSON.stringify(goals));
   }, [user, goals]);
+
+  const setApiKey = (key: string) => {
+    setApiKeyState(key);
+    if (key) {
+      localStorage.setItem('neon_api_key_enc', encryptKey(key));
+    } else {
+      localStorage.removeItem('neon_api_key_enc');
+    }
+  };
 
   const login = (name: string) => {
     const newUser: User = {
@@ -106,7 +120,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const isJustCompleted = !g.completed && newValue >= g.targetValue;
       
       if (isJustCompleted) {
-        awardXp(50); // XP Reward for goal completion
+        awardXp(50); 
       }
 
       return {
@@ -131,7 +145,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         newXp -= prev.nextLevelXp;
         newLevel += 1;
         newNextXp = Math.floor(prev.nextLevelXp * 1.2);
-        // Could add level up modal trigger here
       }
 
       return {
@@ -159,7 +172,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       tags: ['#일상']
     };
     setPosts([newPost, ...posts]);
-    awardXp(20); // XP for social interaction
+    awardXp(20); 
   };
 
   const toggleLike = (postId: string) => {
@@ -170,8 +183,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{ 
-      user, goals, posts, isLoading, 
-      login, logout, addGoal, updateGoalProgress, 
+      user, goals, posts, isLoading, apiKey,
+      setApiKey, login, logout, addGoal, updateGoalProgress, 
       addPost, toggleLike, xpGained, clearXpPopup 
     }}>
       {children}

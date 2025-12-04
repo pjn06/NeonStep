@@ -1,10 +1,13 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Target, Users, User as UserIcon } from 'lucide-react';
+import { Home, Target, Users, User as UserIcon, Settings } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { ApiKeyModal } from './ApiKeyModal';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { xpGained, clearXpPopup } = useApp();
+  const { xpGained, clearXpPopup, apiKey } = useApp();
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
   // Simple XP popup animation
   React.useEffect(() => {
@@ -16,6 +19,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="min-h-screen pb-20 bg-slate-950 text-white overflow-x-hidden">
+      {/* API Key Modal */}
+      <ApiKeyModal 
+        isOpen={isApiKeyModalOpen || !apiKey} 
+        onClose={() => setIsApiKeyModalOpen(false)} 
+        forceOpen={!apiKey}
+      />
+
       {/* XP Popup */}
       {xpGained && (
         <div className="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
@@ -25,13 +35,25 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       )}
 
+      {/* Top Bar for Settings */}
+      {apiKey && (
+        <div className="fixed top-4 right-4 z-40 md:absolute md:right-4">
+            <button 
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="p-2 bg-slate-900/80 backdrop-blur rounded-full border border-slate-700 text-slate-400 hover:text-cyan-400 transition-colors shadow-lg"
+            >
+                <Settings size={20} />
+            </button>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-md mx-auto min-h-screen bg-slate-900 relative shadow-2xl overflow-hidden">
         {/* Decorative Background Elements */}
         <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-fuchsia-600/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
         
-        <div className="relative z-10 p-4">
+        <div className="relative z-10 p-4 pt-12 md:pt-4">
           {children}
         </div>
       </main>

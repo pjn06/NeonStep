@@ -1,19 +1,33 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { User, Goal } from "../types";
 
-// Initialize the client
-// Ideally, in a real app, this key should be proxied through a backend.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    // Minimal token usage test
+    await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: 'ping',
+    });
+    return true;
+  } catch (error) {
+    console.error("API Key Verification Failed:", error);
+    return false;
+  }
+};
 
 export const getMotivationalMessage = async (
+  apiKey: string,
   user: User,
   pendingGoals: Goal[]
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
-    return "API 키가 설정되지 않았습니다. 목표를 달성하고 멋진 하루를 보내세요!";
+  if (!apiKey) {
+    return "API 키가 설정되지 않았습니다. 설정 아이콘을 눌러 키를 등록해주세요!";
   }
 
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const goalTitles = pendingGoals.map(g => g.title).join(", ");
     
     const response = await ai.models.generateContent({
@@ -32,14 +46,15 @@ export const getMotivationalMessage = async (
     return response.text || "오늘도 힘차게 나아가세요! 🚀";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "잠시 연결이 불안정하지만, 당신의 의지는 굳건합니다! 다시 시도해주세요. 💪";
+    return "잠시 연결이 불안정하지만, 당신의 의지는 굳건합니다! (API 키를 확인해주세요) 💪";
   }
 };
 
-export const getSmartGoalSuggestion = async (): Promise<{title: string, type: 'STUDY' | 'OUTDOOR' | 'HEALTH' | 'SOCIAL', unit: string, value: number} | null> => {
-    if (!process.env.API_KEY) return null;
+export const getSmartGoalSuggestion = async (apiKey: string): Promise<{title: string, type: 'STUDY' | 'OUTDOOR' | 'HEALTH' | 'SOCIAL', unit: string, value: number} | null> => {
+    if (!apiKey) return null;
 
     try {
+        const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: "은둔형 외톨이 극복이나 공부 의지 향상에 도움이 되는 작고 쉬운 목표 하나를 JSON으로 제안해주세요. 속성: title(문자열), type('STUDY'|'OUTDOOR'|'HEALTH'|'SOCIAL' 중 하나), unit('분' 또는 '회'), value(숫자).",
@@ -54,6 +69,7 @@ export const getSmartGoalSuggestion = async (): Promise<{title: string, type: 'S
         }
         return null;
     } catch (e) {
+        console.error("Gemini Goal Suggestion Error", e);
         return null;
     }
 }

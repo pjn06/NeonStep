@@ -1,13 +1,13 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { NeonCard, ProgressBar, NeonButton } from '../components/NeonUI';
 import { getMotivationalMessage } from '../services/geminiService';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Zap, Clock, MessageSquare, Loader2 } from 'lucide-react';
-import { Goal } from '../types';
 
 export const Dashboard: React.FC = () => {
-  const { user, goals } = useApp();
+  const { user, goals, apiKey } = useApp();
   const [aiMessage, setAiMessage] = useState<string>('');
   const [loadingAi, setLoadingAi] = useState(false);
 
@@ -18,19 +18,18 @@ export const Dashboard: React.FC = () => {
   const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const handleGetAdvice = async () => {
-    if (!user) return;
+    if (!user || !apiKey) return;
     setLoadingAi(true);
-    const msg = await getMotivationalMessage(user, todayGoals.filter(g => !g.completed));
+    const msg = await getMotivationalMessage(apiKey, user, todayGoals.filter(g => !g.completed));
     setAiMessage(msg);
     setLoadingAi(false);
   };
 
   const chartData = [
     { name: '완료', value: completedCount },
-    { name: '미완료', value: Math.max(0, totalCount - completedCount) } // Ensure at least minimal visualization
+    { name: '미완료', value: Math.max(0, totalCount - completedCount) } 
   ];
   
-  // If no goals, show a placeholder in chart
   const finalChartData = totalCount === 0 ? [{ name: '휴식', value: 1 }] : chartData;
   const COLORS = totalCount === 0 ? ['#334155'] : ['#d946ef', '#1e293b'];
 
@@ -129,10 +128,12 @@ export const Dashboard: React.FC = () => {
             </div>
         ) : (
             <div className="text-center py-2">
-                <p className="text-slate-400 text-sm mb-4">지금 동기부여가 필요하신가요?</p>
+                <p className="text-slate-400 text-sm mb-4">
+                    {apiKey ? '지금 동기부여가 필요하신가요?' : '응원 메시지를 받으려면 API 키 설정이 필요합니다.'}
+                </p>
                 <NeonButton 
                     onClick={handleGetAdvice} 
-                    disabled={loadingAi}
+                    disabled={loadingAi || !apiKey}
                     className="w-full flex items-center justify-center gap-2 text-sm py-2"
                 >
                     {loadingAi ? <Loader2 className="animate-spin" size={16} /> : '⚡ 응원 메시지 받기'}

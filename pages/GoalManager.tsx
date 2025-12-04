@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { NeonCard, NeonButton, ProgressBar } from '../components/NeonUI';
@@ -6,7 +7,7 @@ import { Plus, Check, MoreVertical, BrainCircuit, Loader2 } from 'lucide-react';
 import { getSmartGoalSuggestion } from '../services/geminiService';
 
 export const GoalManager: React.FC = () => {
-  const { goals, addGoal, updateGoalProgress } = useApp();
+  const { goals, addGoal, updateGoalProgress, apiKey } = useApp();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   
@@ -39,8 +40,9 @@ export const GoalManager: React.FC = () => {
   };
 
   const handleSuggestion = async () => {
+      if (!apiKey) return;
       setIsSuggesting(true);
-      const suggestion = await getSmartGoalSuggestion();
+      const suggestion = await getSmartGoalSuggestion(apiKey);
       if(suggestion) {
           setNewTitle(suggestion.title);
           setNewType(suggestion.type);
@@ -70,11 +72,11 @@ export const GoalManager: React.FC = () => {
       {!showAddForm && (
         <button 
             onClick={handleSuggestion}
-            disabled={isSuggesting}
-            className="w-full bg-slate-800/50 border border-dashed border-fuchsia-500/50 rounded-xl p-3 text-sm text-fuchsia-400 flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+            disabled={isSuggesting || !apiKey}
+            className={`w-full bg-slate-800/50 border border-dashed border-fuchsia-500/50 rounded-xl p-3 text-sm text-fuchsia-400 flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors ${!apiKey && 'opacity-50 cursor-not-allowed'}`}
         >
             {isSuggesting ? <Loader2 className="animate-spin" size={16}/> : <BrainCircuit size={16} />}
-            AI에게 목표 추천받기
+            {apiKey ? 'AI에게 목표 추천받기' : 'AI 추천을 위해 키 설정 필요'}
         </button>
       )}
 

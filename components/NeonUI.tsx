@@ -6,7 +6,9 @@ export const NeonButton: React.FC<{
   variant?: 'primary' | 'secondary' | 'danger';
   className?: string;
   fullWidth?: boolean;
-}> = ({ children, onClick, variant = 'primary', className = '', fullWidth = false }) => {
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
+}> = ({ children, onClick, variant = 'primary', className = '', fullWidth = false, disabled, type }) => {
   const baseStyle = "relative px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
@@ -18,6 +20,8 @@ export const NeonButton: React.FC<{
   return (
     <button 
       onClick={onClick} 
+      type={type}
+      disabled={disabled}
       className={`${baseStyle} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
     >
       {children}
